@@ -4,6 +4,7 @@ package query
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -12,6 +13,10 @@ import (
 	"github.com/anthropics/claude-code-go/internal/tools"
 	"github.com/anthropics/claude-code-go/internal/types"
 )
+
+// ErrMaxTurnsReached is returned when the conversation loop exhausts the
+// configured maximum number of turns without completing naturally.
+var ErrMaxTurnsReached = errors.New("max turns reached: the agent's conversation loop hit the configured turn limit without completing; increase --max-turns or simplify the task")
 
 // Engine manages the conversation loop between the user, Claude, and tools.
 type Engine struct {
@@ -96,11 +101,15 @@ func (e *Engine) Submit(ctx context.Context, userInput string) error {
 			return err
 		}
 		if !shouldContinue {
-			break
+			return nil
 		}
 	}
 
-	return nil
+	// The loop exhausted all turns without completing naturally
+	if e.onError != nil {
+		e.onError(ErrMaxTurnsReached)
+	}
+	return ErrMaxTurnsReached
 }
 
 // runTurn executes a single turn of the conversation loop.
