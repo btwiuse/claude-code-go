@@ -29,6 +29,26 @@ func TestConfigDir(t *testing.T) {
 	})
 }
 
+func TestSessionsDir(t *testing.T) {
+	t.Run("default sessions dir", func(t *testing.T) {
+		os.Unsetenv("CLAUDE_CONFIG_DIR")
+		home, _ := os.UserHomeDir()
+		expected := filepath.Join(home, ".claude", "sessions")
+		if got := SessionsDir(); got != expected {
+			t.Errorf("expected %s, got %s", expected, got)
+		}
+	})
+
+	t.Run("sessions dir ignores custom config dir", func(t *testing.T) {
+		t.Setenv("CLAUDE_CONFIG_DIR", t.TempDir())
+		home, _ := os.UserHomeDir()
+		expected := filepath.Join(home, ".claude", "sessions")
+		if got := SessionsDir(); got != expected {
+			t.Errorf("expected %s, got %s", expected, got)
+		}
+	})
+}
+
 func TestGlobalConfig(t *testing.T) {
 	t.Run("load missing config", func(t *testing.T) {
 		tmpDir := t.TempDir()

@@ -84,7 +84,11 @@ func ProjectConfigPath() string {
 
 // SessionsDir returns the path to the sessions directory.
 func SessionsDir() string {
-	return filepath.Join(ConfigDir(), "sessions")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return filepath.Join(".", ".claude", "sessions")
+	}
+	return filepath.Join(home, ".claude", "sessions")
 }
 
 // EnsureConfigDir creates the configuration directory if it doesn't exist.
