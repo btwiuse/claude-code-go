@@ -172,3 +172,19 @@ func stripHTML(s string) string {
 
 	return strings.Join(cleaned, "\n")
 }
+
+// decodeHTMLEntities replaces common HTML entities with their characters.
+func decodeHTMLEntities(s string) string {
+	r := strings.NewReplacer(
+		"&quot;", "\"",
+		"&amp;", "&",
+		"&lt;", "<",
+		"&gt;", ">",
+		"&#x27;", "'",
+		"&#39;", "'",
+		"&apos;", "'",
+		"&#x2F;", "/",
+		"&nbsp;", " ",
+	)
+	return r.Replace(s)
+}
