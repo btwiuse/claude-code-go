@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/anthropics/claude-code-go/internal/types"
+	"github.com/btwiuse/claude-code-go/types"
 )
 
 // ToolResult represents the result of a tool execution.

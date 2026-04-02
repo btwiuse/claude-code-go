@@ -1,3 +1,3 @@
-module github.com/anthropics/claude-code-go
+module github.com/btwiuse/claude-code-go
 
 go 1.26

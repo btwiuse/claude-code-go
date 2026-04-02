@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/anthropics/claude-code-go/internal/api"
-	"github.com/anthropics/claude-code-go/internal/cost"
-	"github.com/anthropics/claude-code-go/internal/tools"
-	"github.com/anthropics/claude-code-go/internal/types"
+	"github.com/btwiuse/claude-code-go/api"
+	"github.com/btwiuse/claude-code-go/cost"
+	"github.com/btwiuse/claude-code-go/tools"
+	"github.com/btwiuse/claude-code-go/types"
 )
 
 // makeStreamingResponse builds a raw SSE response body that the API client can parse.

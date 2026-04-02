@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anthropics/claude-code-go/internal/config"
-	"github.com/anthropics/claude-code-go/internal/constants"
-	"github.com/anthropics/claude-code-go/internal/types"
+	"github.com/btwiuse/claude-code-go/config"
+	"github.com/btwiuse/claude-code-go/constants"
+	"github.com/btwiuse/claude-code-go/types"
 )
 
 // Client is the Claude API client.

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/anthropics/claude-code-go/internal/types"
+	"github.com/btwiuse/claude-code-go/types"
 )
 
 // DangerousFiles are files that require elevated permissions to modify.

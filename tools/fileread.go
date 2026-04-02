@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/anthropics/claude-code-go/internal/types"
+	"github.com/btwiuse/claude-code-go/types"
 )
 
 // FileReadTool reads file contents.

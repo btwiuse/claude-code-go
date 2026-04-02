@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/anthropics/claude-code-go/internal/types"
+	"github.com/btwiuse/claude-code-go/types"
 )
 
 func TestSession(t *testing.T) {
