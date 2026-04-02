@@ -14,20 +14,14 @@ const (
 	Reset     = "\033[0m"
 	Bold      = "\033[1m"
 	Dim       = "\033[2m"
-	Italic    = "\033[3m"
-	Underline = "\033[4m"
 
 	Red     = "\033[31m"
 	Green   = "\033[32m"
 	Yellow  = "\033[33m"
 	Blue    = "\033[34m"
-	Magenta = "\033[35m"
 	Cyan    = "\033[36m"
 	White   = "\033[37m"
 	Gray    = "\033[90m"
-
-	BgBlue    = "\033[44m"
-	BgMagenta = "\033[45m"
 )
 
 // Spinner provides an animated loading indicator.
@@ -146,11 +140,6 @@ func PrintError(msg string) {
 	fmt.Printf("%s%sError: %s%s\n", Red, Bold, msg, Reset)
 }
 
-// PrintDivider displays a horizontal divider.
-func PrintDivider() {
-	fmt.Printf("%s%s%s\n", Dim, strings.Repeat("─", 50), Reset)
-}
-
 // ReadInput reads a line of input from the user with a prompt.
 func ReadInput(prompt string) (string, error) {
 	fmt.Printf("%s%s%s", Bold, prompt, Reset)
@@ -160,36 +149,4 @@ func ReadInput(prompt string) (string, error) {
 		return "", err
 	}
 	return strings.TrimRight(input, "\n\r"), nil
-}
-
-// ReadMultilineInput reads multiple lines until a blank line is entered.
-func ReadMultilineInput() (string, error) {
-	var lines []string
-	reader := bufio.NewReader(os.Stdin)
-
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			if len(lines) > 0 {
-				return strings.Join(lines, "\n"), nil
-			}
-			return "", err
-		}
-		line = strings.TrimRight(line, "\n\r")
-		if line == "" && len(lines) > 0 {
-			break
-		}
-		lines = append(lines, line)
-	}
-
-	return strings.Join(lines, "\n"), nil
-}
-
-// Confirm asks the user for a yes/no confirmation.
-func Confirm(prompt string) bool {
-	fmt.Printf("%s%s%s [y/N] ", Bold, prompt, Reset)
-	reader := bufio.NewReader(os.Stdin)
-	answer, _ := reader.ReadString('\n')
-	answer = strings.TrimSpace(strings.ToLower(answer))
-	return answer == "y" || answer == "yes"
 }

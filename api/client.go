@@ -67,13 +67,6 @@ func WithSessionID(id string) ClientOption {
 	}
 }
 
-// WithHTTPClient sets a custom HTTP client.
-func WithHTTPClient(httpClient *http.Client) ClientOption {
-	return func(c *Client) {
-		c.httpClient = httpClient
-	}
-}
-
 // NewClient creates a new Claude API client.
 func NewClient(opts ...ClientOption) (*Client, error) {
 	c := &Client{

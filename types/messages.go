@@ -12,7 +12,6 @@ type Role string
 const (
 	RoleUser      Role = "user"
 	RoleAssistant Role = "assistant"
-	RoleSystem    Role = "system"
 )
 
 // ContentType represents the type of a content block.
@@ -20,7 +19,6 @@ type ContentType string
 
 const (
 	ContentTypeText       ContentType = "text"
-	ContentTypeImage      ContentType = "image"
 	ContentTypeToolUse    ContentType = "tool_use"
 	ContentTypeToolResult ContentType = "tool_result"
 	ContentTypeThinking   ContentType = "thinking"
@@ -72,15 +70,6 @@ type Usage struct {
 	CacheCreationInputTokens int `json:"cache_creation_input_tokens,omitempty"`
 }
 
-// ModelUsage tracks cumulative usage for a specific model.
-type ModelUsage struct {
-	InputTokens              int     `json:"input_tokens"`
-	OutputTokens             int     `json:"output_tokens"`
-	CacheReadInputTokens     int     `json:"cache_read_input_tokens"`
-	CacheCreationInputTokens int     `json:"cache_creation_input_tokens"`
-	CostUSD                  float64 `json:"cost_usd"`
-}
-
 // StreamEvent represents an event from the streaming API.
 type StreamEvent struct {
 	Type  string          `json:"type"`
@@ -127,22 +116,6 @@ type ToolDefinition struct {
 	Name        string          `json:"name"`
 	Description string          `json:"description"`
 	InputSchema ToolInputSchema `json:"input_schema"`
-}
-
-// APIRequest represents a request to the Claude Messages API.
-type APIRequest struct {
-	Model         string           `json:"model"`
-	MaxTokens     int              `json:"max_tokens"`
-	Messages      []Message        `json:"messages"`
-	System        []SystemBlock    `json:"system,omitempty"`
-	Tools         []ToolDefinition `json:"tools,omitempty"`
-	Stream        bool             `json:"stream"`
-	StopSequences []string         `json:"stop_sequences,omitempty"`
-	Temperature   *float64         `json:"temperature,omitempty"`
-	TopP          *float64         `json:"top_p,omitempty"`
-
-	// Extended thinking
-	Thinking *ThinkingConfig `json:"thinking,omitempty"`
 }
 
 // SystemBlock represents a system prompt block.

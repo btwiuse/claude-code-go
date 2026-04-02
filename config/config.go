@@ -2,8 +2,6 @@
 package config
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -17,17 +15,6 @@ type GlobalConfig struct {
 	Settings     map[string]interface{} `json:"settings,omitempty"`
 	History      []HistoryEntry         `json:"history,omitempty"`
 	UserID       string                 `json:"userId,omitempty"`
-}
-
-// ProjectConfig represents per-project configuration.
-type ProjectConfig struct {
-	AllowedTools     []string               `json:"allowedTools,omitempty"`
-	MCPServers       map[string]interface{} `json:"mcpServers,omitempty"`
-	LastSessionID    string                 `json:"lastSessionId,omitempty"`
-	LastCost         float64                `json:"lastCost,omitempty"`
-	LastDuration     float64                `json:"lastDuration,omitempty"`
-	LastLinesAdded   int                    `json:"lastLinesAdded,omitempty"`
-	LastLinesRemoved int                    `json:"lastLinesRemoved,omitempty"`
 }
 
 // HistoryEntry represents a single entry in the command history.
@@ -63,23 +50,9 @@ func ConfigDir() string {
 	return filepath.Join(home, ".claude")
 }
 
-// ProjectConfigDir returns the path to the project-local configuration directory.
-func ProjectConfigDir() string {
-	cwd, err := os.Getwd()
-	if err != nil {
-		cwd = "."
-	}
-	return filepath.Join(cwd, ".claude")
-}
-
 // GlobalConfigPath returns the path to the global configuration file.
 func GlobalConfigPath() string {
 	return filepath.Join(ConfigDir(), "config.json")
-}
-
-// ProjectConfigPath returns the path to the project configuration file.
-func ProjectConfigPath() string {
-	return filepath.Join(ProjectConfigDir(), "config.json")
 }
 
 // SessionsDir returns the path to the sessions directory.
@@ -148,58 +121,6 @@ func UpdateGlobalConfig(updater func(*GlobalConfig)) error {
 	cfg := GetGlobalConfig()
 	updater(cfg)
 	return SaveGlobalConfig(cfg)
-}
-
-// LoadProjectConfig loads the project-level configuration.
-func LoadProjectConfig() (*ProjectConfig, error) {
-	path := ProjectConfigPath()
-	data, err := os.ReadFile(path)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return &ProjectConfig{}, nil
-		}
-		return nil, fmt.Errorf("reading project config: %w", err)
-	}
-
-	var cfg ProjectConfig
-	if err := json.Unmarshal(data, &cfg); err != nil {
-		return nil, fmt.Errorf("parsing project config: %w", err)
-	}
-	return &cfg, nil
-}
-
-// SaveProjectConfig writes the project-level configuration.
-func SaveProjectConfig(cfg *ProjectConfig) error {
-	dir := ProjectConfigDir()
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
-
-	data, err := json.MarshalIndent(cfg, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshaling project config: %w", err)
-	}
-	return os.WriteFile(ProjectConfigPath(), data, 0644)
-}
-
-// GetOrCreateUserID returns the user ID, creating one if it doesn't exist.
-func GetOrCreateUserID() string {
-	cfg := GetGlobalConfig()
-	if cfg.UserID != "" {
-		return cfg.UserID
-	}
-
-	// Generate a new user ID
-	bytes := make([]byte, 16)
-	if _, err := rand.Read(bytes); err != nil {
-		return "unknown"
-	}
-	userID := hex.EncodeToString(bytes)
-
-	_ = UpdateGlobalConfig(func(c *GlobalConfig) {
-		c.UserID = userID
-	})
-	return userID
 }
 
 // GetAPIKey returns the API key from environment or configuration.
