@@ -172,10 +172,7 @@ func (t *WikipediaTool) Execute(ctx context.Context, input json.RawMessage, tool
 
 	for i, r := range results {
 		snippet := stripHTML(r.Snippet)
-		snippet = strings.ReplaceAll(snippet, "&quot;", "\"")
-		snippet = strings.ReplaceAll(snippet, "&amp;", "&")
-		snippet = strings.ReplaceAll(snippet, "&lt;", "<")
-		snippet = strings.ReplaceAll(snippet, "&gt;", ">")
+		snippet = decodeHTMLEntities(snippet)
 
 		fmt.Fprintf(&out, "%d. %s\n", i+1, r.Title)
 		fmt.Fprintf(&out, "   %s\n", snippet)

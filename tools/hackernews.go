@@ -197,11 +197,7 @@ func (t *HackerNewsTool) Execute(ctx context.Context, input json.RawMessage, too
 			fmt.Fprintf(&out, "   Author: %s | %s\n", hit.Author, hit.CreatedAt)
 
 			commentText := stripHTML(hit.CommentText)
-			commentText = strings.ReplaceAll(commentText, "&quot;", "\"")
-			commentText = strings.ReplaceAll(commentText, "&amp;", "&")
-			commentText = strings.ReplaceAll(commentText, "&#x27;", "'")
-			commentText = strings.ReplaceAll(commentText, "&lt;", "<")
-			commentText = strings.ReplaceAll(commentText, "&gt;", ">")
+			commentText = decodeHTMLEntities(commentText)
 			if len(commentText) > 300 {
 				commentText = commentText[:297] + "..."
 			}
@@ -222,11 +218,7 @@ func (t *HackerNewsTool) Execute(ctx context.Context, input json.RawMessage, too
 
 			if hit.StoryText != "" {
 				storyText := stripHTML(hit.StoryText)
-				storyText = strings.ReplaceAll(storyText, "&quot;", "\"")
-				storyText = strings.ReplaceAll(storyText, "&amp;", "&")
-				storyText = strings.ReplaceAll(storyText, "&#x27;", "'")
-				storyText = strings.ReplaceAll(storyText, "&lt;", "<")
-				storyText = strings.ReplaceAll(storyText, "&gt;", ">")
+				storyText = decodeHTMLEntities(storyText)
 				if len(storyText) > 300 {
 					storyText = storyText[:297] + "..."
 				}
