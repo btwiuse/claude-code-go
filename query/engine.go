@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/anthropics/claude-code-go/internal/api"
-	"github.com/anthropics/claude-code-go/internal/cost"
-	"github.com/anthropics/claude-code-go/internal/tools"
-	"github.com/anthropics/claude-code-go/internal/types"
+	"github.com/btwiuse/claude-code-go/api"
+	"github.com/btwiuse/claude-code-go/cost"
+	"github.com/btwiuse/claude-code-go/tools"
+	"github.com/btwiuse/claude-code-go/types"
 )
 
 // ErrMaxTurnsReached is returned when the conversation loop exhausts the

@@ -9,8 +9,8 @@ import (
 	"sort"
 	"time"
 
-	"github.com/anthropics/claude-code-go/internal/config"
-	"github.com/anthropics/claude-code-go/internal/types"
+	"github.com/btwiuse/claude-code-go/config"
+	"github.com/btwiuse/claude-code-go/types"
 )
 
 // Session represents an active conversation session.

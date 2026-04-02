@@ -12,14 +12,14 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/anthropics/claude-code-go/internal/api"
-	"github.com/anthropics/claude-code-go/internal/config"
-	"github.com/anthropics/claude-code-go/internal/constants"
-	"github.com/anthropics/claude-code-go/internal/cost"
-	"github.com/anthropics/claude-code-go/internal/query"
-	"github.com/anthropics/claude-code-go/internal/session"
-	"github.com/anthropics/claude-code-go/internal/tools"
-	"github.com/anthropics/claude-code-go/internal/ui"
+	"github.com/btwiuse/claude-code-go/api"
+	"github.com/btwiuse/claude-code-go/config"
+	"github.com/btwiuse/claude-code-go/constants"
+	"github.com/btwiuse/claude-code-go/cost"
+	"github.com/btwiuse/claude-code-go/query"
+	"github.com/btwiuse/claude-code-go/session"
+	"github.com/btwiuse/claude-code-go/tools"
+	"github.com/btwiuse/claude-code-go/ui"
 )
 
 // App is the main Claude Code application.

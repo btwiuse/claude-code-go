@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/anthropics/claude-code-go/internal/types"
+	"github.com/btwiuse/claude-code-go/types"
 )
 
 // AgentTool creates a sub-agent for complex tasks.

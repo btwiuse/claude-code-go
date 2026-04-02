@@ -3,7 +3,7 @@
 BINARY_NAME := claude-code-go
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "0.1.0-go")
 BUILD_TIME := $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-LDFLAGS := -ldflags "-s -w -X github.com/anthropics/claude-code-go/internal/constants.Version=$(VERSION)"
+LDFLAGS := -ldflags "-s -w -X github.com/btwiuse/claude-code-go/constants.Version=$(VERSION)"
 
 # Default target
 all: build

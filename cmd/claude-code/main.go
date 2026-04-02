@@ -22,8 +22,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/anthropics/claude-code-go/internal/cli"
-	"github.com/anthropics/claude-code-go/internal/constants"
+	"github.com/btwiuse/claude-code-go/cli"
+	"github.com/btwiuse/claude-code-go/constants"
 )
 
 func main() {
