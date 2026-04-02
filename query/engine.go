@@ -72,6 +72,21 @@ func NewEngine(cfg EngineConfig) *Engine {
 	}
 }
 
+// SetOnText updates the text streaming callback.
+func (e *Engine) SetOnText(fn func(string)) { e.onText = fn }
+
+// SetOnToolUse updates the tool use callback.
+func (e *Engine) SetOnToolUse(fn func(string, json.RawMessage)) { e.onToolUse = fn }
+
+// SetOnToolResult updates the tool result callback.
+func (e *Engine) SetOnToolResult(fn func(string, *tools.ToolResult)) { e.onToolResult = fn }
+
+// SetOnThinking updates the thinking callback.
+func (e *Engine) SetOnThinking(fn func(string)) { e.onThinking = fn }
+
+// SetOnError updates the error callback.
+func (e *Engine) SetOnError(fn func(error)) { e.onError = fn }
+
 // GetMessages returns the current conversation messages.
 func (e *Engine) GetMessages() []types.Message {
 	return e.messages

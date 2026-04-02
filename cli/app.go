@@ -6,15 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
+	tea "charm.land/bubbletea/v2"
+
 	"github.com/btwiuse/claude-code-go/api"
-	"github.com/btwiuse/claude-code-go/config"
-	"github.com/btwiuse/claude-code-go/constants"
 	"github.com/btwiuse/claude-code-go/cost"
 	"github.com/btwiuse/claude-code-go/query"
 	"github.com/btwiuse/claude-code-go/session"
@@ -109,7 +107,7 @@ func Run(cfg RunConfig) error {
 		verbose:     cfg.Verbose,
 	}
 
-	// Create query engine
+	// Create query engine (callbacks are set later based on mode)
 	engine := query.NewEngine(query.EngineConfig{
 		Client:       client,
 		Registry:     registry,
@@ -117,26 +115,27 @@ func Run(cfg RunConfig) error {
 		ToolCtx:      toolCtx,
 		SystemPrompt: systemPrompt,
 		MaxTurns:     cfg.MaxTurns,
-		OnText:       ui.PrintAssistantText,
-		OnToolUse: func(name string, input json.RawMessage) {
-			ui.PrintToolUse(name)
-		},
-		OnToolResult: func(name string, result *tools.ToolResult) {
-			ui.PrintToolResult(name, result.Content, result.IsError)
-		},
-		OnThinking: ui.PrintThinking,
-		OnError: func(err error) {
-			ui.PrintError(err.Error())
-		},
 	})
 	app.engine = engine
 
 	// Handle non-interactive mode
 	if cfg.Prompt != "" {
+		// Set direct stdout callbacks for non-interactive mode
+		engine.SetOnText(ui.PrintAssistantText)
+		engine.SetOnToolUse(func(name string, _ json.RawMessage) {
+			ui.PrintToolUse(name)
+		})
+		engine.SetOnToolResult(func(name string, result *tools.ToolResult) {
+			ui.PrintToolResult(name, result.Content, result.IsError)
+		})
+		engine.SetOnThinking(ui.PrintThinking)
+		engine.SetOnError(func(err error) {
+			ui.PrintError(err.Error())
+		})
 		return app.runNonInteractive(cfg.Prompt)
 	}
 
-	// Interactive mode
+	// Interactive mode (bubbletea handles callbacks)
 	return app.runInteractive()
 }
 
@@ -158,179 +157,14 @@ func (app *App) runNonInteractive(prompt string) error {
 }
 
 func (app *App) runInteractive() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	m := newAppModel(app)
+	p := tea.NewProgram(m)
 
-	// Set up signal handling
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-sigCh
-		fmt.Println()
-		ui.PrintCostSummary(app.costTracker.GetSummary())
-		cancel()
-		os.Exit(0)
-	}()
+	// Wire engine callbacks to send messages into the bubbletea event loop
+	wireEngineCallbacks(app, p)
 
-	// Display header
-	ui.PrintHeader(constants.Version, app.model)
-	ui.PrintWelcome(app.cwd)
-
-	// Main REPL loop
-	for {
-		input, err := ui.ReadInput("claude> ")
-		if err != nil {
-			// EOF (Ctrl+D)
-			fmt.Println()
-			break
-		}
-
-		input = strings.TrimSpace(input)
-		if input == "" {
-			continue
-		}
-
-		// Handle commands
-		if strings.HasPrefix(input, "/") {
-			shouldContinue := app.handleCommand(input)
-			if !shouldContinue {
-				break
-			}
-			continue
-		}
-
-		// Submit to Claude
-		err = app.engine.Submit(ctx, input)
-		if err != nil {
-			if ctx.Err() != nil {
-				break
-			}
-			ui.PrintError(err.Error())
-		}
-		fmt.Println() // Newline after response
-
-		// Save session periodically
-		app.session.Messages = app.engine.GetMessages()
-		if err := app.session.Save(); err != nil && app.verbose {
-			ui.PrintError(fmt.Sprintf("Failed to save session: %v", err))
-		}
-	}
-
-	// Print final cost summary
-	ui.PrintCostSummary(app.costTracker.GetSummary())
-
-	return nil
-}
-
-// handleCommand processes slash commands. Returns false if the app should exit.
-func (app *App) handleCommand(input string) bool {
-	parts := strings.Fields(input)
-	cmd := strings.ToLower(parts[0])
-
-	switch cmd {
-	case "/quit", "/exit", "/q":
-		return false
-
-	case "/help", "/h":
-		printHelp()
-
-	case "/clear":
-		app.engine.SetMessages(nil)
-		fmt.Println("Conversation cleared.")
-
-	case "/cost":
-		ui.PrintCostSummary(app.costTracker.GetSummary())
-
-	case "/model":
-		fmt.Printf("Current model: %s\n", app.model)
-
-	case "/version":
-		fmt.Printf("Claude Code (Go) v%s\n", constants.Version)
-
-	case "/session":
-		fmt.Printf("Session ID: %s\n", app.session.ID)
-		fmt.Printf("Messages: %d\n", len(app.engine.GetMessages()))
-
-	case "/config":
-		fmt.Printf("Config directory: %s\n", config.ConfigDir())
-		fmt.Printf("API key configured: %v\n", config.GetAPIKey() != "")
-
-	case "/compact":
-		msgs := app.engine.GetMessages()
-		if len(msgs) > 4 {
-			// Keep system context + last 4 messages
-			app.engine.SetMessages(msgs[len(msgs)-4:])
-			fmt.Printf("Compacted conversation: kept last %d messages.\n", 4)
-		} else {
-			fmt.Println("Conversation is already compact.")
-		}
-
-	case "/doctor":
-		runDoctor()
-
-	default:
-		fmt.Printf("Unknown command: %s. Type /help for available commands.\n", cmd)
-	}
-
-	return true
-}
-
-func printHelp() {
-	fmt.Println()
-	fmt.Printf("%s%sAvailable Commands:%s\n", ui.Bold, ui.Cyan, ui.Reset)
-	fmt.Println()
-	commands := []struct{ cmd, desc string }{
-		{"/help, /h", "Show this help message"},
-		{"/quit, /exit, /q", "Exit Claude Code"},
-		{"/clear", "Clear conversation history"},
-		{"/compact", "Compact conversation to save context"},
-		{"/cost", "Show session cost summary"},
-		{"/model", "Show current model"},
-		{"/version", "Show version"},
-		{"/session", "Show session info"},
-		{"/config", "Show configuration info"},
-		{"/doctor", "Run diagnostics"},
-	}
-	for _, c := range commands {
-		fmt.Printf("  %s%-20s%s %s\n", ui.Bold, c.cmd, ui.Reset, c.desc)
-	}
-	fmt.Println()
-}
-
-func runDoctor() {
-	fmt.Printf("\n%s%sClaude Code Doctor%s\n\n", ui.Bold, ui.Cyan, ui.Reset)
-
-	// Check API key
-	apiKey := config.GetAPIKey()
-	if apiKey != "" {
-		fmt.Printf("  %s✓%s API key configured\n", ui.Green, ui.Reset)
-	} else {
-		fmt.Printf("  %s✗%s API key not configured\n", ui.Red, ui.Reset)
-	}
-
-	// Check config directory
-	configDir := config.ConfigDir()
-	if _, err := os.Stat(configDir); err == nil {
-		fmt.Printf("  %s✓%s Config directory exists: %s\n", ui.Green, ui.Reset, configDir)
-	} else {
-		fmt.Printf("  %s✗%s Config directory missing: %s\n", ui.Red, ui.Reset, configDir)
-	}
-
-	// Check git
-	if _, err := os.Stat(".git"); err == nil {
-		fmt.Printf("  %s✓%s Git repository detected\n", ui.Green, ui.Reset)
-	} else {
-		fmt.Printf("  %s·%s Not in a git repository\n", ui.Yellow, ui.Reset)
-	}
-
-	// Check ripgrep
-	if _, err := exec.LookPath("rg"); err == nil {
-		fmt.Printf("  %s✓%s ripgrep (rg) available\n", ui.Green, ui.Reset)
-	} else {
-		fmt.Printf("  %s·%s ripgrep (rg) not found (will fall back to grep)\n", ui.Yellow, ui.Reset)
-	}
-
-	fmt.Println()
+	_, err := p.Run()
+	return err
 }
 
 func buildSystemPrompt(cwd string, custom string) string {

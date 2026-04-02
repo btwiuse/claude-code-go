@@ -1,15 +1,12 @@
-// Package ui provides terminal UI components for Claude Code.
+// Package ui provides terminal UI formatting for Claude Code.
 package ui
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"strings"
-	"time"
 )
 
-// Colors for terminal output.
+// ANSI color and formatting constants.
 const (
 	Reset     = "\033[0m"
 	Bold      = "\033[1m"
@@ -30,166 +27,159 @@ const (
 	BgMagenta = "\033[45m"
 )
 
-// Spinner provides an animated loading indicator.
-type Spinner struct {
-	message string
-	frames  []string
-	done    chan struct{}
-	active  bool
+// FormatHeader returns the formatted application header string.
+func FormatHeader(version, model string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "\n%s%s╭─────────────────────────────────────────╮%s\n", Bold, Blue, Reset)
+	fmt.Fprintf(&b, "%s%s│%s %s%sClaude Code%s (Go) v%s %s%s│%s\n", Bold, Blue, Reset, Bold, White, Reset, version, Bold, Blue, Reset)
+	fmt.Fprintf(&b, "%s%s│%s Model: %-33s%s%s│%s\n", Bold, Blue, Reset, model, Bold, Blue, Reset)
+	fmt.Fprintf(&b, "%s%s╰─────────────────────────────────────────╯%s", Bold, Blue, Reset)
+	return b.String()
 }
 
-// NewSpinner creates a new spinner with the given message.
-func NewSpinner(message string) *Spinner {
-	return &Spinner{
-		message: message,
-		frames:  []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
-		done:    make(chan struct{}),
-	}
+// FormatWelcome returns the formatted welcome message string.
+func FormatWelcome(cwd string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "%sTip:%s Use %s/help%s to see available commands, %s/quit%s to exit.\n", Dim, Reset, Bold, Reset, Bold, Reset)
+	fmt.Fprintf(&b, "%sCWD:%s %s", Dim, Reset, cwd)
+	return b.String()
 }
 
-// Start begins the spinner animation.
-func (s *Spinner) Start() {
-	if s.active {
-		return
-	}
-	s.active = true
-	go func() {
-		i := 0
-		for {
-			select {
-			case <-s.done:
-				fmt.Print("\r\033[K") // Clear line
-				return
-			default:
-				frame := s.frames[i%len(s.frames)]
-				fmt.Printf("\r%s%s %s%s", Cyan, frame, s.message, Reset)
-				i++
-				time.Sleep(80 * time.Millisecond)
-			}
-		}
-	}()
+// FormatToolUse returns the formatted tool usage notification string.
+func FormatToolUse(name string) string {
+	return fmt.Sprintf("\n%s%s  %s%s", Yellow, Bold, name, Reset)
 }
 
-// Stop ends the spinner animation.
-func (s *Spinner) Stop() {
-	if !s.active {
-		return
-	}
-	s.active = false
-	close(s.done)
-}
-
-// UpdateMessage changes the spinner message.
-func (s *Spinner) UpdateMessage(msg string) {
-	s.message = msg
-}
-
-// PrintHeader displays the application header.
-func PrintHeader(version, model string) {
-	fmt.Printf("\n%s%s╭─────────────────────────────────────────╮%s\n", Bold, Blue, Reset)
-	fmt.Printf("%s%s│%s %s%sClaude Code%s (Go) v%s %s%s│%s\n", Bold, Blue, Reset, Bold, White, Reset, version, Bold, Blue, Reset)
-	fmt.Printf("%s%s│%s Model: %-33s%s%s│%s\n", Bold, Blue, Reset, model, Bold, Blue, Reset)
-	fmt.Printf("%s%s╰─────────────────────────────────────────╯%s\n\n", Bold, Blue, Reset)
-}
-
-// PrintWelcome displays the welcome message.
-func PrintWelcome(cwd string) {
-	fmt.Printf("%sTip:%s Use %s/help%s to see available commands, %s/quit%s to exit.\n", Dim, Reset, Bold, Reset, Bold, Reset)
-	fmt.Printf("%sCWD:%s %s\n\n", Dim, Reset, cwd)
-}
-
-// PrintAssistantText displays assistant text output.
-func PrintAssistantText(text string) {
-	fmt.Print(text)
-}
-
-// PrintToolUse displays a tool usage notification.
-func PrintToolUse(name string) {
-	fmt.Printf("\n%s%s  %s%s\n", Yellow, Bold, name, Reset)
-}
-
-// PrintToolResult displays a tool execution result.
-func PrintToolResult(name string, content string, isError bool) {
+// FormatToolResult returns the formatted tool execution result string.
+func FormatToolResult(name string, content string, isError bool) string {
+	var b strings.Builder
 	if isError {
-		fmt.Printf("%s%sError:%s %s\n", Red, Bold, Reset, content)
+		fmt.Fprintf(&b, "%s%sError:%s %s", Red, Bold, Reset, content)
 	} else {
-		// Show truncated result
 		lines := strings.Split(content, "\n")
 		maxLines := 20
 		if len(lines) > maxLines {
 			for _, line := range lines[:maxLines] {
-				fmt.Printf("%s%s%s\n", Gray, line, Reset)
+				fmt.Fprintf(&b, "%s%s%s\n", Gray, line, Reset)
 			}
-			fmt.Printf("%s... (%d more lines)%s\n", Dim, len(lines)-maxLines, Reset)
+			fmt.Fprintf(&b, "%s... (%d more lines)%s", Dim, len(lines)-maxLines, Reset)
 		} else {
-			for _, line := range lines {
-				fmt.Printf("%s%s%s\n", Gray, line, Reset)
+			for i, line := range lines {
+				fmt.Fprintf(&b, "%s%s%s", Gray, line, Reset)
+				if i < len(lines)-1 {
+					b.WriteString("\n")
+				}
 			}
 		}
 	}
+	return b.String()
 }
 
-// PrintThinking displays a thinking indicator.
+// FormatThinking returns the formatted thinking indicator string.
+func FormatThinking(text string) string {
+	if text == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s%s%s", Dim, text, Reset)
+}
+
+// FormatCostSummary returns the formatted cost summary string.
+func FormatCostSummary(summary string) string {
+	return fmt.Sprintf("%s%s%s", Dim, summary, Reset)
+}
+
+// FormatError returns the formatted error message string.
+func FormatError(msg string) string {
+	return fmt.Sprintf("%s%sError: %s%s", Red, Bold, msg, Reset)
+}
+
+// FormatDivider returns the formatted horizontal divider string.
+func FormatDivider() string {
+	return fmt.Sprintf("%s%s%s", Dim, strings.Repeat("─", 50), Reset)
+}
+
+// FormatHelp returns the formatted help text string.
+func FormatHelp() string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "\n%s%sAvailable Commands:%s\n\n", Bold, Cyan, Reset)
+	commands := []struct{ cmd, desc string }{
+		{"/help, /h", "Show this help message"},
+		{"/quit, /exit, /q", "Exit Claude Code"},
+		{"/clear", "Clear conversation history"},
+		{"/compact", "Compact conversation to save context"},
+		{"/cost", "Show session cost summary"},
+		{"/model", "Show current model"},
+		{"/version", "Show version"},
+		{"/session", "Show session info"},
+		{"/config", "Show configuration info"},
+		{"/doctor", "Run diagnostics"},
+	}
+	for _, c := range commands {
+		fmt.Fprintf(&b, "  %s%-20s%s %s\n", Bold, c.cmd, Reset, c.desc)
+	}
+	return b.String()
+}
+
+// FormatDoctor returns the formatted doctor diagnostics string.
+func FormatDoctor(apiKeyOk, configDirOk, gitRepoOk, ripgrepOk bool, configDir string) string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "\n%s%sClaude Code Doctor%s\n\n", Bold, Cyan, Reset)
+
+	if apiKeyOk {
+		fmt.Fprintf(&b, "  %s✓%s API key configured\n", Green, Reset)
+	} else {
+		fmt.Fprintf(&b, "  %s✗%s API key not configured\n", Red, Reset)
+	}
+
+	if configDirOk {
+		fmt.Fprintf(&b, "  %s✓%s Config directory exists: %s\n", Green, Reset, configDir)
+	} else {
+		fmt.Fprintf(&b, "  %s✗%s Config directory missing: %s\n", Red, Reset, configDir)
+	}
+
+	if gitRepoOk {
+		fmt.Fprintf(&b, "  %s✓%s Git repository detected\n", Green, Reset)
+	} else {
+		fmt.Fprintf(&b, "  %s·%s Not in a git repository\n", Yellow, Reset)
+	}
+
+	if ripgrepOk {
+		fmt.Fprintf(&b, "  %s✓%s ripgrep (rg) available\n", Green, Reset)
+	} else {
+		fmt.Fprintf(&b, "  %s·%s ripgrep (rg) not found (will fall back to grep)\n", Yellow, Reset)
+	}
+
+	return b.String()
+}
+
+// PrintAssistantText prints assistant text directly to stdout (for non-interactive mode).
+func PrintAssistantText(text string) {
+	fmt.Print(text)
+}
+
+// PrintToolUse prints a tool usage notification to stdout (for non-interactive mode).
+func PrintToolUse(name string) {
+	fmt.Println(FormatToolUse(name))
+}
+
+// PrintToolResult prints a tool result to stdout (for non-interactive mode).
+func PrintToolResult(name string, content string, isError bool) {
+	fmt.Println(FormatToolResult(name, content, isError))
+}
+
+// PrintThinking prints thinking text to stdout (for non-interactive mode).
 func PrintThinking(text string) {
 	if text != "" {
-		fmt.Printf("%s%s%s", Dim, text, Reset)
+		fmt.Print(FormatThinking(text))
 	}
 }
 
-// PrintCostSummary displays cost information.
-func PrintCostSummary(summary string) {
-	fmt.Printf("\n%s%s%s\n", Dim, summary, Reset)
-}
-
-// PrintError displays an error message.
+// PrintError prints an error message to stdout (for non-interactive mode).
 func PrintError(msg string) {
-	fmt.Printf("%s%sError: %s%s\n", Red, Bold, msg, Reset)
+	fmt.Println(FormatError(msg))
 }
 
-// PrintDivider displays a horizontal divider.
-func PrintDivider() {
-	fmt.Printf("%s%s%s\n", Dim, strings.Repeat("─", 50), Reset)
-}
-
-// ReadInput reads a line of input from the user with a prompt.
-func ReadInput(prompt string) (string, error) {
-	fmt.Printf("%s%s%s", Bold, prompt, Reset)
-	reader := bufio.NewReader(os.Stdin)
-	input, err := reader.ReadString('\n')
-	if err != nil {
-		return "", err
-	}
-	return strings.TrimRight(input, "\n\r"), nil
-}
-
-// ReadMultilineInput reads multiple lines until a blank line is entered.
-func ReadMultilineInput() (string, error) {
-	var lines []string
-	reader := bufio.NewReader(os.Stdin)
-
-	for {
-		line, err := reader.ReadString('\n')
-		if err != nil {
-			if len(lines) > 0 {
-				return strings.Join(lines, "\n"), nil
-			}
-			return "", err
-		}
-		line = strings.TrimRight(line, "\n\r")
-		if line == "" && len(lines) > 0 {
-			break
-		}
-		lines = append(lines, line)
-	}
-
-	return strings.Join(lines, "\n"), nil
-}
-
-// Confirm asks the user for a yes/no confirmation.
-func Confirm(prompt string) bool {
-	fmt.Printf("%s%s%s [y/N] ", Bold, prompt, Reset)
-	reader := bufio.NewReader(os.Stdin)
-	answer, _ := reader.ReadString('\n')
-	answer = strings.TrimSpace(strings.ToLower(answer))
-	return answer == "y" || answer == "yes"
+// PrintCostSummary prints a cost summary to stdout (for non-interactive mode).
+func PrintCostSummary(summary string) {
+	fmt.Println("\n" + FormatCostSummary(summary))
 }
