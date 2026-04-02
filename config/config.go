@@ -86,7 +86,7 @@ func ProjectConfigPath() string {
 func SessionsDir() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		return filepath.Join(".", ".claude", "sessions")
+		return filepath.Join(os.TempDir(), "claude-code-go", "sessions")
 	}
 	return filepath.Join(home, ".claude", "sessions")
 }

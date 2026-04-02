@@ -9,8 +9,7 @@ import (
 
 func TestConfigDir(t *testing.T) {
 	t.Run("default config dir", func(t *testing.T) {
-		// Unset custom env var
-		os.Unsetenv("CLAUDE_CONFIG_DIR")
+		t.Setenv("CLAUDE_CONFIG_DIR", "")
 		dir := ConfigDir()
 		home, _ := os.UserHomeDir()
 		expected := filepath.Join(home, ".claude")
@@ -31,7 +30,7 @@ func TestConfigDir(t *testing.T) {
 
 func TestSessionsDir(t *testing.T) {
 	t.Run("default sessions dir", func(t *testing.T) {
-		os.Unsetenv("CLAUDE_CONFIG_DIR")
+		t.Setenv("CLAUDE_CONFIG_DIR", "")
 		home, _ := os.UserHomeDir()
 		expected := filepath.Join(home, ".claude", "sessions")
 		if got := SessionsDir(); got != expected {

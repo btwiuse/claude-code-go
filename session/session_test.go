@@ -36,7 +36,8 @@ func TestSession(t *testing.T) {
 
 	t.Run("save and load", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		t.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
+		t.Setenv("HOME", tmpDir)
+		t.Setenv("USERPROFILE", tmpDir)
 
 		s := NewSession("save-test", "/tmp", "claude-sonnet-4-20250514")
 		s.AddMessage(types.Message{
@@ -65,7 +66,8 @@ func TestSession(t *testing.T) {
 
 	t.Run("list sessions", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		t.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
+		t.Setenv("HOME", tmpDir)
+		t.Setenv("USERPROFILE", tmpDir)
 
 		// Create a few sessions
 		for _, id := range []string{"sess1", "sess2", "sess3"} {
@@ -86,7 +88,8 @@ func TestSession(t *testing.T) {
 
 	t.Run("delete session", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		t.Setenv("CLAUDE_CONFIG_DIR", tmpDir)
+		t.Setenv("HOME", tmpDir)
+		t.Setenv("USERPROFILE", tmpDir)
 
 		s := NewSession("delete-test", "/tmp", "claude-sonnet-4-20250514")
 		if err := s.Save(); err != nil {
