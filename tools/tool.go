@@ -200,5 +200,7 @@ func RegisterBuiltinTools(r *Registry) {
 	r.Register(NewGrepTool())
 	r.Register(NewListDirTool())
 	r.Register(NewWebFetchTool())
+	r.Register(NewWikipediaTool())
+	r.Register(NewHackerNewsTool())
 	r.Register(NewAgentTool())
 }

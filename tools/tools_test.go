@@ -382,8 +382,8 @@ func TestRegistry(t *testing.T) {
 		r2 := NewRegistry()
 		RegisterBuiltinTools(r2)
 		all := r2.All()
-		if len(all) < 7 {
-			t.Errorf("expected at least 7 tools, got %d", len(all))
+		if len(all) < 9 {
+			t.Errorf("expected at least 9 tools, got %d", len(all))
 		}
 	})
 
@@ -391,8 +391,8 @@ func TestRegistry(t *testing.T) {
 		r2 := NewRegistry()
 		RegisterBuiltinTools(r2)
 		defs := r2.ToDefinitions()
-		if len(defs) < 7 {
-			t.Errorf("expected at least 7 definitions, got %d", len(defs))
+		if len(defs) < 9 {
+			t.Errorf("expected at least 9 definitions, got %d", len(defs))
 		}
 		for _, d := range defs {
 			if d.Name == "" {
@@ -412,6 +412,159 @@ func TestRegistry(t *testing.T) {
 		}
 		if !result.IsError {
 			t.Error("expected error for unknown tool")
+		}
+	})
+}
+
+func TestWikipediaTool(t *testing.T) {
+	tool := NewWikipediaTool()
+
+	t.Run("name and schema", func(t *testing.T) {
+		if tool.Name() != "Wikipedia" {
+			t.Errorf("expected name Wikipedia, got %s", tool.Name())
+		}
+		if !tool.IsReadOnly() {
+			t.Error("Wikipedia should be read-only")
+		}
+		if !tool.IsEnabled() {
+			t.Error("Wikipedia should be enabled")
+		}
+		schema := tool.InputSchema()
+		if _, ok := schema.Properties["query"]; !ok {
+			t.Error("missing query property in schema")
+		}
+		if _, ok := schema.Properties["limit"]; !ok {
+			t.Error("missing limit property in schema")
+		}
+		if _, ok := schema.Properties["lang"]; !ok {
+			t.Error("missing lang property in schema")
+		}
+		if len(schema.Required) != 1 || schema.Required[0] != "query" {
+			t.Errorf("expected required=[query], got %v", schema.Required)
+		}
+	})
+
+	t.Run("empty query", func(t *testing.T) {
+		ctx := newTestToolCtx(t)
+		input, _ := json.Marshal(WikipediaInput{})
+		result, err := tool.Execute(context.Background(), input, ctx)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !result.IsError {
+			t.Error("expected error for empty query")
+		}
+	})
+
+	t.Run("invalid input", func(t *testing.T) {
+		ctx := newTestToolCtx(t)
+		result, err := tool.Execute(context.Background(), json.RawMessage(`{invalid`), ctx)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !result.IsError {
+			t.Error("expected error for invalid JSON")
+		}
+	})
+
+	t.Run("user facing name", func(t *testing.T) {
+		input, _ := json.Marshal(WikipediaInput{Query: "derangement"})
+		name := tool.UserFacingName(input)
+		if name != "Wikipedia: derangement" {
+			t.Errorf("expected 'Wikipedia: derangement', got %q", name)
+		}
+	})
+
+	t.Run("user facing name truncated", func(t *testing.T) {
+		input, _ := json.Marshal(WikipediaInput{Query: "a very long query that exceeds the forty character limit for display"})
+		name := tool.UserFacingName(input)
+		if !contains(name, "...") {
+			t.Errorf("expected truncated name, got %q", name)
+		}
+	})
+
+	t.Run("user facing name empty", func(t *testing.T) {
+		name := tool.UserFacingName(json.RawMessage(`{}`))
+		if name != "Wikipedia" {
+			t.Errorf("expected 'Wikipedia', got %q", name)
+		}
+	})
+}
+
+func TestHackerNewsTool(t *testing.T) {
+	tool := NewHackerNewsTool()
+
+	t.Run("name and schema", func(t *testing.T) {
+		if tool.Name() != "HackerNews" {
+			t.Errorf("expected name HackerNews, got %s", tool.Name())
+		}
+		if !tool.IsReadOnly() {
+			t.Error("HackerNews should be read-only")
+		}
+		if !tool.IsEnabled() {
+			t.Error("HackerNews should be enabled")
+		}
+		schema := tool.InputSchema()
+		if _, ok := schema.Properties["query"]; !ok {
+			t.Error("missing query property in schema")
+		}
+		if _, ok := schema.Properties["limit"]; !ok {
+			t.Error("missing limit property in schema")
+		}
+		if _, ok := schema.Properties["sort_by"]; !ok {
+			t.Error("missing sort_by property in schema")
+		}
+		if _, ok := schema.Properties["tags"]; !ok {
+			t.Error("missing tags property in schema")
+		}
+		if len(schema.Required) != 1 || schema.Required[0] != "query" {
+			t.Errorf("expected required=[query], got %v", schema.Required)
+		}
+	})
+
+	t.Run("empty query", func(t *testing.T) {
+		ctx := newTestToolCtx(t)
+		input, _ := json.Marshal(HackerNewsInput{})
+		result, err := tool.Execute(context.Background(), input, ctx)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !result.IsError {
+			t.Error("expected error for empty query")
+		}
+	})
+
+	t.Run("invalid input", func(t *testing.T) {
+		ctx := newTestToolCtx(t)
+		result, err := tool.Execute(context.Background(), json.RawMessage(`{invalid`), ctx)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !result.IsError {
+			t.Error("expected error for invalid JSON")
+		}
+	})
+
+	t.Run("user facing name", func(t *testing.T) {
+		input, _ := json.Marshal(HackerNewsInput{Query: "golang"})
+		name := tool.UserFacingName(input)
+		if name != "HackerNews: golang" {
+			t.Errorf("expected 'HackerNews: golang', got %q", name)
+		}
+	})
+
+	t.Run("user facing name truncated", func(t *testing.T) {
+		input, _ := json.Marshal(HackerNewsInput{Query: "a very long query that exceeds the forty character limit for display"})
+		name := tool.UserFacingName(input)
+		if !contains(name, "...") {
+			t.Errorf("expected truncated name, got %q", name)
+		}
+	})
+
+	t.Run("user facing name empty", func(t *testing.T) {
+		name := tool.UserFacingName(json.RawMessage(`{}`))
+		if name != "HackerNews" {
+			t.Errorf("expected 'HackerNews', got %q", name)
 		}
 	})
 }
