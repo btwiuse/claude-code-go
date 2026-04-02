@@ -311,12 +311,9 @@ func convertStreamEvent(sdkEvent anthropic.MessageStreamEventUnion) *types.Strea
 
 	case "message_delta":
 		e := sdkEvent.AsMessageDelta()
-		delta, _ := json.Marshal(map[string]string{
-			"stop_reason": string(e.Delta.StopReason),
-		})
 		return &types.StreamEvent{
 			Type:  "message_delta",
-			Delta: json.RawMessage(delta),
+			Delta: marshalDelta(map[string]string{"stop_reason": string(e.Delta.StopReason)}),
 			Usage: &types.Usage{
 				OutputTokens: int(e.Usage.OutputTokens),
 			},
@@ -350,32 +347,35 @@ func convertContentBlockStartToContentBlock(cb anthropic.ContentBlockStartEventC
 	return block
 }
 
+// marshalDelta is a helper that marshals a map to JSON for stream delta conversion.
+// Marshaling simple string maps cannot fail in practice, so errors are not propagated.
+func marshalDelta(m map[string]string) json.RawMessage {
+	raw, _ := json.Marshal(m)
+	return json.RawMessage(raw)
+}
+
 // convertDeltaToRaw converts the SDK delta union to raw JSON.
 func convertDeltaToRaw(delta anthropic.RawContentBlockDeltaUnion) json.RawMessage {
 	switch delta.Type {
 	case "text_delta":
-		raw, _ := json.Marshal(map[string]string{
+		return marshalDelta(map[string]string{
 			"type": "text_delta",
 			"text": delta.Text,
 		})
-		return json.RawMessage(raw)
 	case "input_json_delta":
-		raw, _ := json.Marshal(map[string]string{
+		return marshalDelta(map[string]string{
 			"type":         "input_json_delta",
 			"partial_json": delta.PartialJSON,
 		})
-		return json.RawMessage(raw)
 	case "thinking_delta":
-		raw, _ := json.Marshal(map[string]string{
+		return marshalDelta(map[string]string{
 			"type":     "thinking_delta",
 			"thinking": delta.Thinking,
 		})
-		return json.RawMessage(raw)
 	default:
-		raw, _ := json.Marshal(map[string]string{
+		return marshalDelta(map[string]string{
 			"type": delta.Type,
 		})
-		return json.RawMessage(raw)
 	}
 }
 
@@ -409,7 +409,7 @@ func convertContentBlocks(blocks []types.ContentBlock) []anthropic.ContentBlockP
 			}
 			params = append(params, anthropic.NewToolResultBlock(block.ToolUseID, content, block.IsError))
 		case types.ContentTypeThinking:
-			params = append(params, anthropic.NewThinkingBlock(block.Thinking, block.Thinking))
+			params = append(params, anthropic.NewThinkingBlock("", block.Thinking))
 		case types.ContentTypeImage:
 			if block.Source != nil {
 				params = append(params, anthropic.NewImageBlockBase64(block.Source.MediaType, block.Source.Data))
@@ -557,11 +557,12 @@ func convertSDKError(err error) error {
 		apiErr := &APIError{
 			StatusCode: sdkErr.StatusCode,
 		}
-		// Try to parse the error body for type/message info
+		// Try to parse the error body for type/message info.
+		// Re-set StatusCode after unmarshal since the JSON body doesn't contain it.
 		if raw := sdkErr.RawJSON(); raw != "" {
 			_ = json.Unmarshal([]byte(raw), apiErr)
+			apiErr.StatusCode = sdkErr.StatusCode
 		}
-		apiErr.StatusCode = sdkErr.StatusCode
 		return apiErr
 	}
 	return err
